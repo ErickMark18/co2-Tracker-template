@@ -4,7 +4,7 @@ on:
   push:
     branches: [master]
   workflow_run:
-    workflows: ["*"]
+    workflows: ["*"] 
     types: [completed]
     branches: [master]
 
@@ -33,6 +33,8 @@ jobs:
       - name: Detect runner region
         id: region
         run: |
+          # Nota: En runners públicos de GitHub esto siempre irá al else.
+          # Si usas self-hosted runners en AWS/Azure/GCP, asegúrate de exportar esas variables tú mismo.
           if [ -n "$AWS_REGION" ]; then
             echo "region=$AWS_REGION" >> $GITHUB_OUTPUT
             echo "provider=aws" >> $GITHUB_OUTPUT
@@ -43,21 +45,26 @@ jobs:
             echo "region=$GCP_REGION" >> $GITHUB_OUTPUT
             echo "provider=gcp" >> $GITHUB_OUTPUT
           else
-            echo "region=eu-north-1" >> $GITHUB_OUTPUT
+            echo "region=eu-west-1" >> $GITHUB_OUTPUT
             echo "provider=aws" >> $GITHUB_OUTPUT
           fi
 
       - name: Track CO2 emissions
-        if: ${{ env.CO2_API_URL != '' && env.CO2_API_KEY != '' }}
+        if: env.CO2_API_URL != '' && env.CO2_API_KEY != ''
         run: |
           REPO="${{ github.repository }}"
           BRANCH="${{ github.ref_name }}"
+          WORKFLOW_NAME="${{ github.workflow }}"
+          COMMIT_SHA="${{ github.sha }}"
+          
           if [ "${{ github.event_name }}" == "workflow_run" ]; then
             REPO="${{ github.event.workflow_run.repository.full_name }}"
             BRANCH="${{ github.event.workflow_run.head_branch }}"
+            WORKFLOW_NAME="${{ github.event.workflow_run.name }}"
+            COMMIT_SHA="${{ github.event.workflow_run.head_sha }}"
           fi
-
+          
           curl -s -X POST "$CO2_API_URL/deploys" \
             -H "Content-Type: application/json" \
             -H "X-API-Key: $CO2_API_KEY" \
-            -d "{\"repo\":\"$REPO\",\"branch\":\"$BRANCH\",\"region\":\"${{ steps.region.outputs.region }}\",\"provider\":\"${{ steps.region.outputs.provider }}\",\"duration_s\":${{ steps.duration.outputs.duration_s }},\"runner_size\":\"medium\",\"commit_sha\":\"${{ github.sha }}\",\"workflow_name\":\"${{ github.workflow }}\"}"
+            -d "{\"repo\":\"$REPO\",\"branch\":\"$BRANCH\",\"region\":\"${{ steps.region.outputs.region }}\",\"provider\":\"${{ steps.region.outputs.provider }}\",\"duration_s\":${{ steps.duration.outputs.duration_s }},\"runner_size\":\"medium\",\"commit_sha\":\"$COMMIT_SHA\",\"workflow_name\":\"$WORKFLOW_NAME\"}"
