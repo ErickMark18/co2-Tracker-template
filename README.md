@@ -27,5 +27,5 @@ Cada vez que hagas push y un workflow termine, el CO2 se enviará automáticamen
 
 ## Recursos
 
-- [CO2 Tracker API](https://github.com/tu-usuario/co2-Tracker)
-- [Dashboard](https://tu-url.up.railway.app/dashboard)
+- [CO2 Tracker API](https://github.com/ErickMark18/co2-Tracker)
+- [Dashboard](https://co2-tracker.up.railway.app/dashboard)
